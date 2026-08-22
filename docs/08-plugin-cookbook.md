@@ -863,38 +863,45 @@ only in formatting between the two systems.
 
 ## 8.10 Signals — creating the MetadataType
 
-Mechanism B requires the `MetadataType` to exist before the first sync (8.6). Create it at
-`post_migrate`, alongside any Statuses or Roles your app assumes.
+Mechanism B requires the `MetadataType` to exist before the first sync (8.6). Seed it
+alongside any Statuses or Roles your app assumes.
+
+Use **`nautobot_database_ready`**, not Django's raw `post_migrate`. Nautobot re-broadcasts
+that signal to every app config once *all* migrations are done
+(`nautobot/core/apps/__init__.py:301-309`), and hands you the historical `apps` registry.
+Real apps use it — e.g. `nautobot_ssot/integrations/aci/signals.py:17-20`. See Part 9 §9.11.
 
 ```python
 # nautobot_myipam/signals.py
-"""Post-migrate hooks: create the objects this app assumes exist."""
-
-from nautobot.core.choices import ColorChoices
+"""Database-ready hooks: create the objects this app assumes exist."""
 
 
-def post_migrate_create_objects(sender, apps=None, **kwargs):
-    """Create the MetadataType and Status rows the app depends on."""
-    from django.contrib.contenttypes.models import ContentType
-    from nautobot.extras.choices import MetadataTypeDataTypeChoices
-    from nautobot.extras.models import Status
-    from nautobot.extras.models.metadata import MetadataType
-    from nautobot.ipam.models import IPAddress
+def post_migrate_create_objects(sender, *, apps, **kwargs):
+    """Create the MetadataType and Status rows the app depends on.
+
+    Use the `apps` registry passed by the signal rather than direct model imports, so the
+    handler stays safe regardless of migration state.
+    """
+    ContentType = apps.get_model("contenttypes", "ContentType")
+    MetadataType = apps.get_model("extras", "MetadataType")
+    Status = apps.get_model("extras", "Status")
+    IPAddress = apps.get_model("ipam", "IPAddress")
+
+    content_type = ContentType.objects.get_for_model(IPAddress)
 
     metadata_type, _ = MetadataType.objects.get_or_create(
         name="MyIPAM Record ID",
         defaults={
-            "data_type": MetadataTypeDataTypeChoices.TYPE_TEXT,
+            "data_type": "text",
             "description": "Primary key of this address in MyIPAM.",
         },
     )
-    content_type = ContentType.objects.get_for_model(IPAddress)
-    if content_type not in metadata_type.content_types.all():
+    if not metadata_type.content_types.filter(pk=content_type.pk).exists():
         metadata_type.content_types.add(content_type)
 
     status, _ = Status.objects.get_or_create(
         name="MyIPAM Reserved",
-        defaults={"color": ColorChoices.COLOR_AMBER},
+        defaults={"color": "ffc107"},
     )
     status.content_types.add(content_type)
 ```
@@ -903,16 +910,21 @@ Wire it up in `MyIPAMConfig.ready()`:
 
 ```python
 def ready(self):
-    """Connect post_migrate signal handlers."""
+    """Connect database-ready signal handlers."""
+    from nautobot.core.signals import nautobot_database_ready
+
     from nautobot_myipam.signals import post_migrate_create_objects
 
     super().ready()
-    post_migrate.connect(post_migrate_create_objects, sender=self)
+    nautobot_database_ready.connect(post_migrate_create_objects, sender=self)
 ```
 
-Note the shape mirrors what SSoT does for Mechanism A at `contrib/adapter.py:354-378`:
+The shape mirrors what SSoT does for Mechanism A at `contrib/adapter.py:354-378`:
 `get_or_create` the type, then attach the content type if absent. Both steps are required
 — a `MetadataType` without your model's content type will fail validation on save.
+
+This runs during `nautobot-server post_upgrade` (Part 9 §9.11), which is also when your
+Job database records get refreshed — so operators must run it after install either way.
 
 ---
 

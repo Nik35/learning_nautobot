@@ -6,10 +6,38 @@ DNS/Infoblox SSoT app on the same `ipam.IPAddress` rows.
 Written 2026-08-22 against: nautobot 3.2.4a0, nautobot-app-ssot 4.6.2a0, diffsync 2.2.3a0.
 Every claim carries a `file:line` reference — verify anything that looks surprising.
 
+## Where to start
+
+Pick the row that describes you:
+
+| You are… | Read, in order |
+|---|---|
+| **New to Nautobot** | [09 — Internals](09-nautobot-internals.md) → [01](01-repo-map-and-config.md) → [06](06-plugin-structure-and-standards.md) |
+| **Writing app code today** | [09 §9.6 (the save path)](09-nautobot-internals.md) → [08 — Cookbook](08-plugin-cookbook.md) → [06](06-plugin-structure-and-standards.md) |
+| **Working on the sync itself** | [02 — Diff Engine](02-diff-engine.md) → [03 — Contrib & Metadata](03-contrib-layer-and-metadata.md) → [08 §8.4-8.7](08-plugin-cookbook.md) |
+| **Deciding the design** | [04 — Infoblox Pattern](04-infoblox-pattern-and-secrets.md) → [05 — Assessment](05-assessment-and-design.md) |
+| **Shipping it** | [07 — Packaging](07-packaging-and-distribution.md) |
+
+```mermaid
+flowchart LR
+    N09["09<br/>Nautobot<br/>internals"] --> N01["01<br/>Repo map<br/>& config"]
+    N01 --> N02["02<br/>Diff<br/>engine"]
+    N02 --> N03["03<br/>Contrib &<br/>metadata"]
+    N03 --> N04["04<br/>Infoblox<br/>& secrets"]
+    N04 --> N05["05<br/>Assessment<br/>& design"]
+    N05 --> N06["06<br/>App<br/>skeleton"]
+    N06 --> N08["08<br/>Cookbook<br/>(code)"]
+    N08 --> N07["07<br/>Packaging<br/>& release"]
+
+    style N09 fill:#1f3a5f,stroke:#4a90d9,color:#fff
+    style N08 fill:#1f3a5f,stroke:#4a90d9,color:#fff
+```
+
 ## Contents
 
 | Doc | Covers |
 |---|---|
+| [09 — Nautobot Internals](09-nautobot-internals.md) | **Background mechanics.** Startup and app loading, the registry, the model layer, the save path, request lifecycle, jobs/Celery, the IPAM data model — with flowcharts |
 | [01 — Repo Map & Config](01-repo-map-and-config.md) | Layering, settings override precedence, `NautobotAppConfig` extension points, the `nautobot.apps.*` public API |
 | [02 — Diff Engine](02-diff-engine.md) | `DiffSyncModel`, the three-phase pipeline, the 12-line action decision, the attrs-intersection rule, the flag matrix, scaling limits |
 | [03 — Contrib Layer & Metadata](03-contrib-layer-and-metadata.md) | `NautobotModel` generic CRUD, field-name syntax, `ObjectMetadata.scoped_fields`, the precedence toolkit, where custom logic goes |
@@ -18,6 +46,9 @@ Every claim carries a `file:line` reference — verify anything that looks surpr
 | [06 — Plugin Structure & Standards](06-plugin-structure-and-standards.md) | Copy-pasteable Nautobot app skeleton and dev standards |
 | [07 — Packaging & Distribution](07-packaging-and-distribution.md) | Building the wheel, GitHub Releases vs `ghcr.io`, what installing on a foreign Nautobot actually takes |
 | [08 — Plugin Cookbook](08-plugin-cookbook.md) | **Start here to write code.** Working samples for every layer: DiffSync models/adapters/jobs, metadata provenance, the ownership guard, symptom→cause debug table |
+
+Docs are numbered by the order they were written, not the order to read them — use the
+table above.
 
 ## The five findings that matter most
 
@@ -60,14 +91,23 @@ Every claim carries a `file:line` reference — verify anything that looks surpr
 
 ## Cloned repos
 
-Siblings of this folder, so the `nautobot` working tree stays clean:
+Siblings of this folder, so the `nautobot` working tree stays clean. They are
+gitignored - clone them yourself to resolve the `../nautobot/...` paths in these docs:
 
 ```
-e:\Training-Nikhil\
-├── nautobot/                          3.2.4a0   core
+nautobot_training/
+├── docs/                                        this folder
+├── nautobot/                          3.2.4a0   core (branch: develop)
 ├── nautobot-app-ssot/                 4.6.2a0   framework + 19 integrations
 ├── diffsync/                          2.2.3a0   the diff engine
 ├── nautobot-app-secrets-providers/              Vault / AWS / Azure / Delinea / 1Password
-├── nautobot-app-device-onboarding/              second contrib example
-└── docs/                                        this folder
+└── nautobot-app-device-onboarding/              second contrib example
+```
+
+```bash
+git clone https://github.com/nautobot/nautobot.git
+git clone https://github.com/nautobot/nautobot-app-ssot.git
+git clone https://github.com/networktocode/diffsync.git
+git clone https://github.com/nautobot/nautobot-app-secrets-providers.git
+git clone https://github.com/nautobot/nautobot-app-device-onboarding.git
 ```
