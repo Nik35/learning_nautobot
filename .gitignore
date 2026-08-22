@@ -1,0 +1,41 @@
+# Local Claude Code project instructions - not part of the deliverable
+CLAUDE.md
+
+# Cloned upstream repos. These are reference checkouts, each with its own .git;
+# committing them here would either bloat this repo or create broken gitlinks.
+# Re-create them with the clone commands in docs/README.md.
+/nautobot/
+/nautobot-app-ssot/
+/diffsync/
+/nautobot-app-secrets-providers/
+/nautobot-app-device-onboarding/
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+.venv/
+venv/
+.tox/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Environments and secrets
+.env
+*.env
+!development.env
+creds.env
+
+# Editors / OS
+.vscode/
+.idea/
+*.swp
+Thumbs.db
+desktop.ini
+.DS_Store
